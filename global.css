@@ -1,1 +1,41 @@
+@import url('https://fonts.googleapis.com/css2?family=Playwrite+AU+QLD:wght@100..400&family=Sigmar+One&family=Arizonia&family=Climate+Crisis&family=Titan+One&family=Alfa+Slab+One&family=DM+Serif+Text:ital@0;1&family=Fugaz+One&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Russo+One&display=swap');
 @import "tailwindcss";
+
+/* Define CSS variables for fonts */
+@theme {
+  --font-playwrite: "Playwrite AU QLD", sans-serif;
+  --font-sigmar: "Sigmar One", sans-serif;
+  --font-arizonia: "Arizonia", cursive;
+  --font-climate-crisis: "Climate Crisis", sans-serif;
+  --font-titan-one: "Titan One", sans-serif;
+  --font-alfa: "Alfa Slab One", serif;
+  --font-dmserif: "DM Serif Text", serif;
+  --font-fugaz: "Fugaz One", cursive;
+  --font-inter: "Inter", sans-serif;
+  --font-montserrat: "Montserrat", sans-serif;
+  --font-russo: "Russo One", sans-serif;
+}
+
+:root {
+  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+
+  color-scheme: light dark;
+  color: rgba(255, 255, 255, 0.87);
+  background-color: #101828;
+
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  margin: 0;
+  display: flex;
+  place-items: center;
+  min-width: 320px;
+  min-height: 100vh;
+  background-color: #101828;
+}
