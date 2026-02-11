@@ -1,7 +1,8 @@
 {
   "name": "kryva",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "A Consequence-Aware Skill Gap Self-Diagnosis System",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -12,6 +13,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
     "firebase": "^12.9.0",
+    "framer-motion": "^12.34.0",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -31,5 +33,22 @@
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.48.0",
     "vite": "^7.3.1"
-  }
+  },
+  "keywords": [
+    "education",
+    "skill-gap-analysis",
+    "academic-success",
+    "student-support",
+    "adaptive-learning",
+    "consequence-aware",
+    "first-semester",
+    "educational-technology",
+    "decision-support",
+    "learning-prioritization"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/MohdAqdasAsim/Kryva.git"
+  },
+  "author": "Team Pixel - Mohd Aqdas Asim, Mohd Suleman"
 }

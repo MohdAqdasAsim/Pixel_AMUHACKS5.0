@@ -3,34 +3,28 @@ project:
   tagline: "A Consequence-Aware Skill Gap Self-Diagnosis System"
   description: "An innovative educational application that helps students identify and prioritize critical skill gaps based on their potential academic consequences"
   version: "0.1.0"
-  status: "proposed"
   
 team:
   name: "Team Pixel"
   members:
     - name: "Mohd Aqdas Asim"
-      role: "Developer"
     - name: "Mohd Suleman"
-      role: "Developer"
   
 presentation:
   event: "AMUHACKS 5.0"
-  date: "2024"
+  date: "2026"
   
 repository:
-  url: "https://github.com/yourusername/kryva"
+  url: "https://github.com/MohdAqdasAsim/Kryva"
   default_branch: "main"
   
 technology:
   frontend:
     - "React"
-    - "React Native"
   backend:
-    - "Node.js"
     - "Python"
   database:
     - "Firebase"
-    - "PostgreSQL"
   deployment:
     - "Cloud Platforms"
   analysis_engine:
@@ -63,7 +57,6 @@ architecture:
       description: "Intuitive student dashboard for assessments and progress visualization"
       technologies:
         - "React"
-        - "React Native"
     
     - name: "Recommendation Layer"
       description: "Priority-based actionable guidance"
@@ -80,7 +73,6 @@ architecture:
       description: "Secure storage of course timelines, student profiles, and progress data"
       technologies:
         - "Firebase"
-        - "PostgreSQL"
         
 workflow:
   steps:
@@ -141,14 +133,6 @@ solution_approach:
   focus: "Time-critical skill deficiencies"
   methodology: "Consequence-based prioritization"
   delivery: "Self-guided, actionable steps"
-  
-license:
-  type: "MIT"
-  year: "2024"
-  
-contact:
-  email: "team@kryva.edu"
-  issues: "https://github.com/yourusername/kryva/issues"
   
 documentation:
   user_guide: "docs/user-guide.md"

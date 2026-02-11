@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Playwrite+AU+QLD:wght@100..400&family=Sigmar+One&family=Arizonia&family=Climate+Crisis&family=Titan+One&family=Alfa+Slab+One&family=DM+Serif+Text:ital@0;1&family=Fugaz+One&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Russo+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playwrite+AU+QLD:wght@100..400&family=Sigmar+One&family=Arizonia&family=Climate+Crisis&family=Titan+One&family=Alfa+Slab+One&family=DM+Serif+Text:ital@0;1&family=Fugaz+One&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Russo+One&family=Space+Grotesk:wght@300..700&family=Syne:wght@400..800&display=swap');
 @import "tailwindcss";
 
 /* Define CSS variables for fonts */
@@ -14,28 +14,28 @@
   --font-inter: "Inter", sans-serif;
   --font-montserrat: "Montserrat", sans-serif;
   --font-russo: "Russo One", sans-serif;
+  --font-grotesk: "Space Grotesk", sans-serif;
+  --font-syne: "Syne", sans-serif;
 }
 
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
+  font-family: var(--font-inter);
+  line-height: 1.6;
   font-weight: 400;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #101828;
+  background-color: #0E131C;
+  color: #ffffff;
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
   min-width: 320px;
   min-height: 100vh;
-  background-color: #101828;
 }
