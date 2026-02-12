@@ -104,12 +104,14 @@ const Header = () => {
             </>
           ) : (
             <div ref={menuRef} className="relative">
-              <button
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => setMenuOpen(!menuOpen)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-[#0E2332] border-2 border-[#2a4e62] text-white shadow-md hover:shadow-lg"
+                className="flex items-center justify-center w-10 h-10 rounded-full cursor-pointer text-white hover:text-white/80"
               >
                 <User size={20} />
-              </button>
+              </motion.button>
 
               {menuOpen && (
                 <motion.div
@@ -149,7 +151,7 @@ const Header = () => {
 
         <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }}>
           <Link
-            to="https://github.com/MohdAqdasAsim/Kryva"
+            to={`https://github.com/MohdAqdasAsim/${import.meta.env.VITE_GITHUB_NAME}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-white hover:text-white/80 transition-colors duration-200"

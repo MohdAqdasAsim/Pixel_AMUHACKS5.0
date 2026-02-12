@@ -22,7 +22,6 @@ const Signin = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  // ---------------- SIGN IN ----------------
   const handleSignin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -49,7 +48,6 @@ const Signin = () => {
     }
   };
 
-  // ---------------- GOOGLE SIGN IN ----------------
   const handleGoogleSignin = async () => {
     setError("");
     setLoading(true);
@@ -68,7 +66,6 @@ const Signin = () => {
     }
   };
 
-  // ---------------- PASSWORD RESET ----------------
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -108,7 +105,6 @@ const Signin = () => {
         </div>
 
         <div className="bg-[#242833] border border-gray-700/60 rounded-2xl p-8 shadow-2xl">
-          {/* GOOGLE BUTTON ONLY IN SIGNIN MODE */}
           {mode === "signin" && (
             <>
               <button
@@ -131,7 +127,6 @@ const Signin = () => {
             </>
           )}
 
-          {/* FORM */}
           <form
             onSubmit={mode === "signin" ? handleSignin : handleResetPassword}
             className="space-y-4"
@@ -154,7 +149,6 @@ const Signin = () => {
               </div>
             </div>
 
-            {/* PASSWORD ONLY IN SIGNIN MODE */}
             {mode === "signin" && (
               <div>
                 <label className="block text-sm text-white mb-2">
@@ -184,14 +178,12 @@ const Signin = () => {
               </div>
             )}
 
-            {/* ERROR */}
             {error && (
               <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-lg">
                 {error}
               </div>
             )}
 
-            {/* SUCCESS MESSAGE */}
             {message && (
               <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm p-3 rounded-lg">
                 {message}
@@ -211,7 +203,6 @@ const Signin = () => {
             </button>
           </form>
 
-          {/* SWITCH MODES */}
           {mode === "signin" ? (
             <div className="mt-6 text-center text-sm text-gray-400">
               <button

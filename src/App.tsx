@@ -1,5 +1,8 @@
 import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import {
+  ActionPlans,
+  Assessments,
+  Courses,
   Dashboard,
   Docs,
   HowItWorks,
@@ -9,8 +12,9 @@ import {
   Onboarding,
   Signin,
   Signup,
+  SkillGaps,
 } from "./pages";
-import { AuthHeader, Footer, Header } from "./components";
+import { AuthHeader, Breadcrumb, Footer, Header, SideBar } from "./components";
 import { useAuth } from "./contexts/AuthContext";
 import { useOnboarding } from "./contexts/OnboardingContext";
 
@@ -51,10 +55,20 @@ const PrivateLayout = () => {
     return <Navigate to="/onboarding" replace />;
   }
 
+  // Pages that should not show sidebar
+  const hideSidebarPaths = ["/profile", "/help", "/notifications"];
+  const shouldShowSidebar = !hideSidebarPaths.includes(location.pathname);
+
   return (
-    <section className="min-h-screen bg-[#0E131C]">
-      <Outlet />
-    </section>
+    <div className="bg-[#0E131C] h-screen flex flex-col overflow-hidden">
+      <Breadcrumb />
+      <div className="flex flex-1 overflow-hidden">
+        {shouldShowSidebar && <SideBar />}
+        <main className="flex-1 overflow-auto">
+          <Outlet />
+        </main>
+      </div>
+    </div>
   );
 };
 
@@ -98,6 +112,10 @@ const App = () => {
 
       <Route element={<PrivateLayout />}>
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/assessments" element={<Assessments />} />
+        <Route path="/skill-gaps" element={<SkillGaps />} />
+        <Route path="/action-plans" element={<ActionPlans />} />
+        <Route path="/courses" element={<Courses />} />
       </Route>
     </Routes>
   );

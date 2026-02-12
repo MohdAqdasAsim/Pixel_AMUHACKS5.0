@@ -34,10 +34,8 @@ export const OnboardingProvider = ({ children }: OnboardingProviderProps) => {
 
         if (snapshot.exists()) {
           const data = snapshot.data();
-          console.log("Onboarding data:", data); // Debug log
           setIsOnboardingComplete(data.onboardingComplete === true);
         } else {
-          console.log("No user document found"); // Debug log
           setIsOnboardingComplete(false);
         }
       } catch (error) {
