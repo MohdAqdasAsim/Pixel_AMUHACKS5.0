@@ -3,7 +3,6 @@ import {
   LayoutDashboard,
   Target,
   BookOpen,
-  Users,
   ChevronsLeft,
   ChevronsRight,
   AlertTriangle,

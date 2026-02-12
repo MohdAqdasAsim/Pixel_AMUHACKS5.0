@@ -2,7 +2,6 @@ import { Navigate, Outlet, Route, Routes } from "react-router-dom";
 import {
   ActionPlans,
   Assessments,
-  Courses,
   Dashboard,
   Docs,
   HowItWorks,
@@ -115,7 +114,6 @@ const App = () => {
         <Route path="/assessments" element={<Assessments />} />
         <Route path="/skill-gaps" element={<SkillGaps />} />
         <Route path="/action-plans" element={<ActionPlans />} />
-        <Route path="/courses" element={<Courses />} />
       </Route>
     </Routes>
   );
