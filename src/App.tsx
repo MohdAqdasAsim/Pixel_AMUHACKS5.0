@@ -1,7 +1,9 @@
-import { Navigate, Outlet, Route, Routes } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import {
+  AccountPreferences,
   ActionPlans,
   Assessments,
+  Courses,
   Dashboard,
   Docs,
   HowItWorks,
@@ -9,13 +11,16 @@ import {
   News,
   NotFound,
   Onboarding,
+  PrivacyPolicy,
   Signin,
   Signup,
   SkillGaps,
+  TermsOfService,
 } from "./pages";
 import { AuthHeader, Breadcrumb, Footer, Header, SideBar } from "./components";
 import { useAuth } from "./contexts/AuthContext";
 import { useOnboarding } from "./contexts/OnboardingContext";
+import { useEffect } from "react";
 
 const AuthLayout = () => {
   return (
@@ -54,8 +59,7 @@ const PrivateLayout = () => {
     return <Navigate to="/onboarding" replace />;
   }
 
-  // Pages that should not show sidebar
-  const hideSidebarPaths = ["/profile", "/help", "/notifications"];
+  const hideSidebarPaths = ["/account-preferences"];
   const shouldShowSidebar = !hideSidebarPaths.includes(location.pathname);
 
   return (
@@ -90,32 +94,48 @@ const OnboardingRoute = () => {
   return <Onboarding />;
 };
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
+
+  return null;
+};
+
 const App = () => {
   return (
-    <Routes>
-      <Route element={<PublicLayout />}>
-        <Route index path="/" element={<Landing />} />
-        <Route path="/docs" element={<Docs />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
-        <Route path="/news" element={<News />} />
-        <Route path="*" element={<NotFound />} />
-      </Route>
+    <>
+      <ScrollToTop />
+      <Routes>
+        <Route element={<PublicLayout />}>
+          <Route index path="/" element={<Landing />} />
+          <Route path="/docs" element={<Docs />} />
+          <Route path="/how-it-works" element={<HowItWorks />} />
+          <Route path="/news" element={<News />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/terms-of-service" element={<TermsOfService />} />
+          <Route path="*" element={<NotFound />} />
+        </Route>
 
-      <Route element={<AuthLayout />}>
-        <Route path="/signin" element={<Signin />} />
-        <Route path="/signup" element={<Signup />} />
-      </Route>
+        <Route element={<AuthLayout />}>
+          <Route path="/signin" element={<Signin />} />
+          <Route path="/signup" element={<Signup />} />
+        </Route>
 
-      {/* Onboarding route with its own logic */}
-      <Route path="/onboarding" element={<OnboardingRoute />} />
+        <Route path="/onboarding" element={<OnboardingRoute />} />
 
-      <Route element={<PrivateLayout />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/assessments" element={<Assessments />} />
-        <Route path="/skill-gaps" element={<SkillGaps />} />
-        <Route path="/action-plans" element={<ActionPlans />} />
-      </Route>
-    </Routes>
+        <Route element={<PrivateLayout />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/assessments" element={<Assessments />} />
+          <Route path="/skill-gaps" element={<SkillGaps />} />
+          <Route path="/action-plans" element={<ActionPlans />} />
+          <Route path="/courses" element={<Courses />} />
+          <Route path="/account-preferences" element={<AccountPreferences />} />
+        </Route>
+      </Routes>
+    </>
   );
 };
 

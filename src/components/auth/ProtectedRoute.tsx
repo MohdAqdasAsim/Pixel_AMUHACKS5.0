@@ -15,12 +15,10 @@ const ProtectedRoute = ({
   const { isAuthenticated } = useAuth();
   const { isOnboardingComplete } = useOnboarding();
 
-  // Not logged in
   if (!isAuthenticated) {
     return <Navigate to="/signin" replace />;
   }
 
-  // Logged in but onboarding not complete
   if (requireOnboarding && !isOnboardingComplete) {
     return <Navigate to="/signup" replace />;
   }

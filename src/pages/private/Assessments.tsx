@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -14,32 +13,192 @@ import {
   ChevronRight,
   Brain,
   Zap,
+  RotateCcw,
+  TrendingUp,
+  AlertTriangle,
+  ArrowRight,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { db } from "../../services/config";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { AssessmentTest, AssessmentResults } from "../../components";
 import {
-  AssessmentTest,
-  AssessmentResults,
-  CourseSelector,
-} from "../../components";
+  fetchUserCourses,
+  updateCourseTopics,
+  updateAssessmentResults,
+} from "../../services/common/assessment";
+import type { Course, AssessmentConfig } from "../../types";
 
-type AssessmentStatus = "pending" | "in-progress" | "completed";
+const SkeletonStatCard = () => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-xl sm:rounded-2xl p-4 sm:p-6 backdrop-blur-sm animate-pulse"
+  >
+    <div className="flex items-center justify-between mb-3 sm:mb-4">
+      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl bg-gray-700/50" />
+      <div className="h-3 w-12 sm:w-16 bg-gray-700/50 rounded" />
+    </div>
+    <div className="h-8 sm:h-10 bg-gray-700/50 rounded w-12 sm:w-16 mb-1" />
+    <div className="h-3 sm:h-4 bg-gray-700/50 rounded w-20 sm:w-24" />
+  </motion.div>
+);
 
-interface Course {
-  id: string;
-  name: string;
-  lastAssessed?: Date;
-  nextAssessment?: Date;
-  status: AssessmentStatus;
-  skillGapsCount: number;
-  completionRate: number;
+interface CourseSelectorProps {
+  courses: Course[];
+  onSelectCourse: (course: Course) => void;
 }
 
-interface AssessmentConfig {
-  topics: string[];
-  scope: "entire" | "selected";
-}
+const CourseSelector = ({ courses, onSelectCourse }: CourseSelectorProps) => {
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "completed":
+        return (
+          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 bg-green-500/10 text-green-400 rounded-full text-[10px] sm:text-xs font-medium border border-green-500/20 whitespace-nowrap">
+            <CheckCircle className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+            <span className="hidden xs:inline sm:hidden">Done</span>
+            <span className="xs:hidden sm:inline">Completed</span>
+          </span>
+        );
+      case "in-progress":
+        return (
+          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 bg-blue-500/10 text-blue-400 rounded-full text-[10px] sm:text-xs font-medium border border-blue-500/20 whitespace-nowrap">
+            <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+            <span className="hidden xs:inline">Active</span>
+            <span className="xs:hidden sm:inline">In Progress</span>
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-0.5 sm:py-1 bg-yellow-500/10 text-yellow-400 rounded-full text-[10px] sm:text-xs font-medium border border-yellow-500/20 whitespace-nowrap">
+            <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+            Pending
+          </span>
+        );
+    }
+  };
+
+  if (courses.length === 0) {
+    return (
+      <div className="bg-linear-to-br from-[#242833] to-[#1a1f2e] border border-gray-700/60 rounded-xl p-6 sm:p-8 lg:p-12 text-center">
+        <BookOpen className="w-10 h-10 sm:w-12 sm:h-12 lg:w-16 lg:h-16 text-gray-600 mx-auto mb-3 sm:mb-4" />
+        <h3 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-1.5 sm:mb-2">
+          No courses found
+        </h3>
+        <p className="text-xs sm:text-sm lg:text-base text-gray-400 max-w-md mx-auto">
+          Add courses from the Courses page to start taking assessments
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3 sm:space-y-4 min-w-0 w-full">
+      <h2 className="text-base sm:text-lg lg:text-xl font-semibold text-white mb-3 sm:mb-4 flex items-center gap-2">
+        <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-[#028CC0] shrink-0" />
+        <span className="truncate">Your Courses</span>
+      </h2>
+
+      <div className="grid gap-2.5 sm:gap-3 lg:gap-4 w-full">
+        {courses.map((course, index) => (
+          <motion.div
+            key={course.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05, duration: 0.3 }}
+            onClick={() => onSelectCourse(course)}
+            className="bg-linear-to-br from-[#242833] to-[#1a1f2e] border border-gray-700/60 rounded-lg sm:rounded-xl p-3 sm:p-4 lg:p-6 hover:border-[#028CC0]/50 hover:shadow-lg hover:shadow-[#028CC0]/10 transition-all duration-200 group cursor-pointer relative min-w-0"
+          >
+            <div className="flex items-start justify-between gap-2 sm:gap-3 lg:gap-4 min-w-0">
+              <div className="flex items-start gap-2 sm:gap-3 lg:gap-4 flex-1 min-w-0">
+                <div className="bg-linear-to-br from-[#028CC0]/20 to-[#0279A6]/20 p-1.5 sm:p-2 lg:p-3 rounded-lg group-hover:from-[#028CC0]/30 group-hover:to-[#0279A6]/30 transition-all border border-[#028CC0]/30 shrink-0">
+                  <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-[#028CC0]" />
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-2 lg:gap-3 mb-1.5 sm:mb-2">
+                    <h3 className="text-sm sm:text-base lg:text-lg font-semibold text-white group-hover:text-[#028CC0] transition-colors truncate leading-tight">
+                      {course.name}
+                    </h3>
+                    {getStatusBadge(course.status)}
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4 lg:gap-6 text-[10px] sm:text-xs lg:text-sm text-gray-400">
+                    {course.lastAssessed && (
+                      <span className="flex items-center gap-1 sm:gap-1.5 min-w-0">
+                        <Clock className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 shrink-0" />
+                        <span className="truncate">
+                          <span className="hidden sm:inline">
+                            Last assessed:{" "}
+                          </span>
+                          {new Date(course.lastAssessed).toLocaleDateString(
+                            undefined,
+                            {
+                              month: "short",
+                              day: "numeric",
+                              year:
+                                window.innerWidth >= 640
+                                  ? "numeric"
+                                  : "2-digit",
+                            },
+                          )}
+                        </span>
+                      </span>
+                    )}
+                    {course.skillGapsCount > 0 && (
+                      <span className="flex items-center gap-1 sm:gap-1.5 text-yellow-400 min-w-0">
+                        <AlertTriangle className="w-2.5 h-2.5 sm:w-3 sm:h-3 lg:w-4 lg:h-4 shrink-0" />
+                        <span className="truncate">
+                          {course.skillGapsCount} skill gap
+                          {course.skillGapsCount !== 1 ? "s" : ""}
+                          <span className="hidden sm:inline"> identified</span>
+                        </span>
+                      </span>
+                    )}
+                  </div>
+
+                  {course.skillGapsCount > 0 && (
+                    <div className="mt-2 sm:mt-3">
+                      <div className="flex items-center justify-between text-[10px] sm:text-xs text-gray-400 mb-1">
+                        <span className="flex items-center gap-1 sm:gap-1.5">
+                          <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3 shrink-0" />
+                          <span className="hidden xs:inline">
+                            Skill Gap Resolution
+                          </span>
+                          <span className="xs:hidden">Progress</span>
+                        </span>
+                        <span className="font-semibold text-blue-400">
+                          {Math.round(course.skillGapProgress || 0)}%
+                        </span>
+                      </div>
+                      <div className="h-1.5 sm:h-2 bg-[#2B303B] rounded-full overflow-hidden">
+                        <motion.div
+                          initial={{ width: 0 }}
+                          animate={{
+                            width: `${course.skillGapProgress || 0}%`,
+                          }}
+                          transition={{
+                            duration: 0.6,
+                            delay: index * 0.05 + 0.2,
+                          }}
+                          className="h-full bg-linear-to-r from-blue-500 to-purple-500"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex items-start gap-1 shrink-0">
+                <div className="p-1.5 sm:p-2 hover:bg-[#2B303B] rounded-lg transition-colors group/arrow">
+                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600 group-hover/arrow:text-[#028CC0] group-hover/arrow:translate-x-1 transition-all" />
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+};
 
 const Assessments = () => {
   const { user } = useAuth();
@@ -48,65 +207,35 @@ const Assessments = () => {
   const [selectedCourse, setSelectedCourse] = useState<Course | null>(null);
   const [assessmentStarted, setAssessmentStarted] = useState(false);
   const [assessmentCompleted, setAssessmentCompleted] = useState(false);
-  const [assessmentResults, setAssessmentResults] = useState<any>(null);
+  const [assessmentResults, setAssessmentResults] = useState<unknown>(null);
   const [assessmentConfig, setAssessmentConfig] = useState<AssessmentConfig>({
     topics: [],
     scope: "entire",
+    isReassessment: false,
   });
 
-  // Modal states
-  const [showAddCourseModal, setShowAddCourseModal] = useState(false);
-  const [showEditCourseModal, setShowEditCourseModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showFileUploadModal, setShowFileUploadModal] = useState(false);
+  const [showCourseModal, setShowCourseModal] = useState(false);
   const [showTopicSelectionModal, setShowTopicSelectionModal] = useState(false);
-  const [courseToEdit, setCourseToEdit] = useState<Course | null>(null);
-  const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
-  const [newCourseName, setNewCourseName] = useState("");
-  const [editedCourseName, setEditedCourseName] = useState("");
+  const [showFileUploadModal, setShowFileUploadModal] = useState(false);
 
-  // Topic selection states
-  const [customTopics, setCustomTopics] = useState<string[]>([]);
+  const [courseTopics, setCourseTopics] = useState<string[]>([]);
+  const [selectedTopics, setSelectedTopics] = useState<string[]>([]);
   const [newTopic, setNewTopic] = useState("");
   const [selectedScope, setSelectedScope] = useState<"entire" | "selected">(
     "entire",
   );
 
   useEffect(() => {
-    fetchUserCourses();
-
+    loadUserCourses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  const fetchUserCourses = async () => {
+  const loadUserCourses = async () => {
     if (!user) return;
 
     try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const userCourses = userData.courses || [];
-        const assessments = userData.assessments || {};
-
-        const coursesWithStatus: Course[] = userCourses.map(
-          (courseName: string, index: number) => {
-            const courseAssessment = assessments[courseName] || {};
-            return {
-              id: `course-${index}`,
-              name: courseName,
-              lastAssessed: courseAssessment.completedAt
-                ? new Date(courseAssessment.completedAt)
-                : undefined,
-              nextAssessment: undefined,
-              status: courseAssessment.status || "pending",
-              skillGapsCount: courseAssessment.skillGaps?.length || 0,
-              completionRate: courseAssessment.score || 0,
-            };
-          },
-        );
-
-        setCourses(coursesWithStatus);
-      }
+      const fetchedCourses = await fetchUserCourses(user.uid);
+      setCourses(fetchedCourses);
     } catch (error) {
       console.error("Error fetching courses:", error);
     } finally {
@@ -114,159 +243,81 @@ const Assessments = () => {
     }
   };
 
-  const handleAddCourse = async () => {
-    if (!user || !newCourseName.trim()) return;
-
-    try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const currentCourses = userData.courses || [];
-
-        if (currentCourses.includes(newCourseName.trim())) {
-          alert("This course already exists!");
-          return;
-        }
-
-        const updatedCourses = [...currentCourses, newCourseName.trim()];
-        await updateDoc(doc(db, "users", user.uid), {
-          courses: updatedCourses,
-        });
-
-        setNewCourseName("");
-        setShowAddCourseModal(false);
-        fetchUserCourses();
-      }
-    } catch (error) {
-      console.error("Error adding course:", error);
-      alert("Failed to add course. Please try again.");
-    }
-  };
-
-  const handleEditCourse = async () => {
-    if (!user || !editedCourseName.trim() || !courseToEdit) return;
-
-    try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const currentCourses = userData.courses || [];
-
-        const courseIndex = currentCourses.indexOf(courseToEdit.name);
-        if (courseIndex !== -1) {
-          currentCourses[courseIndex] = editedCourseName.trim();
-
-          await updateDoc(doc(db, "users", user.uid), {
-            courses: currentCourses,
-          });
-
-          setEditedCourseName("");
-          setCourseToEdit(null);
-          setShowEditCourseModal(false);
-          fetchUserCourses();
-        }
-      }
-    } catch (error) {
-      console.error("Error editing course:", error);
-      alert("Failed to edit course. Please try again.");
-    }
-  };
-
-  const handleDeleteCourse = async () => {
-    if (!user || !courseToDelete) return;
-
-    try {
-      const userDoc = await getDoc(doc(db, "users", user.uid));
-      if (userDoc.exists()) {
-        const userData = userDoc.data();
-        const currentCourses = userData.courses || [];
-
-        const updatedCourses = currentCourses.filter(
-          (course: string) => course !== courseToDelete.name,
-        );
-
-        await updateDoc(doc(db, "users", user.uid), {
-          courses: updatedCourses,
-        });
-
-        setCourseToDelete(null);
-        setShowDeleteConfirm(false);
-        fetchUserCourses();
-      }
-    } catch (error) {
-      console.error("Error deleting course:", error);
-      alert("Failed to delete course. Please try again.");
-    }
-  };
-
-  const openEditModal = (course: Course) => {
-    setCourseToEdit(course);
-    setEditedCourseName(course.name);
-    setShowEditCourseModal(true);
-  };
-
-  const openDeleteConfirm = (course: Course) => {
-    setCourseToDelete(course);
-    setShowDeleteConfirm(true);
-  };
-
   const handleCourseSelect = (course: Course) => {
     setSelectedCourse(course);
-    setCustomTopics([]);
+    setCourseTopics(course.topics || []);
+    setSelectedTopics([]);
     setSelectedScope("entire");
+    setShowCourseModal(true);
   };
 
   const handleOpenTopicSelection = () => {
+    setShowCourseModal(false);
     setShowTopicSelectionModal(true);
   };
 
-  const handleAddTopic = () => {
-    if (newTopic.trim() && !customTopics.includes(newTopic.trim())) {
-      setCustomTopics([...customTopics, newTopic.trim()]);
-      setNewTopic("");
+  const handleAddTopic = async () => {
+    if (!newTopic.trim() || !selectedCourse || !user) return;
+
+    const trimmedTopic = newTopic.trim();
+    if (courseTopics.includes(trimmedTopic)) {
+      alert("This topic already exists!");
+      return;
+    }
+
+    const updatedTopics = [...courseTopics, trimmedTopic];
+    setCourseTopics(updatedTopics);
+    setNewTopic("");
+
+    try {
+      await updateCourseTopics(user.uid, selectedCourse.name, updatedTopics);
+    } catch (error) {
+      console.error("Error adding topic:", error);
+      alert("Failed to add topic. Please try again.");
     }
   };
 
-  const handleRemoveTopic = (topic: string) => {
-    setCustomTopics(customTopics.filter((t) => t !== topic));
+  const handleRemoveTopic = async (topic: string) => {
+    if (!selectedCourse || !user) return;
+
+    const updatedTopics = courseTopics.filter((t) => t !== topic);
+    setCourseTopics(updatedTopics);
+    setSelectedTopics(selectedTopics.filter((t) => t !== topic));
+
+    try {
+      await updateCourseTopics(user.uid, selectedCourse.name, updatedTopics);
+    } catch (error) {
+      console.error("Error removing topic:", error);
+      alert("Failed to remove topic. Please try again.");
+    }
+  };
+
+  const handleToggleTopicSelection = (topic: string) => {
+    setSelectedTopics((prev) =>
+      prev.includes(topic) ? prev.filter((t) => t !== topic) : [...prev, topic],
+    );
   };
 
   const handleStartAssessment = () => {
+    const isReassessment = selectedCourse?.canReassess || false;
+
     setAssessmentConfig({
-      topics: customTopics,
+      topics: selectedScope === "selected" ? selectedTopics : [],
       scope: selectedScope,
+      isReassessment,
     });
     setShowTopicSelectionModal(false);
     setAssessmentStarted(true);
   };
 
-  const handleAssessmentComplete = async (results: any) => {
+  const handleAssessmentComplete = async (results: unknown) => {
     setAssessmentResults(results);
     setAssessmentCompleted(true);
     setAssessmentStarted(false);
 
-    // Update backend with completion status and skill gaps
     if (user && selectedCourse) {
       try {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
-          const assessments = userData.assessments || {};
-
-          assessments[selectedCourse.name] = {
-            status: "completed",
-            completedAt: new Date().toISOString(),
-            score: results.score,
-            skillGaps: results.skillGaps || [],
-            topicPerformance: results.topicPerformance,
-            totalQuestions: results.totalQuestions,
-            correctAnswers: results.correctAnswers,
-          };
-
-          await updateDoc(doc(db, "users", user.uid), {
-            assessments: assessments,
-          });
-        }
+        await updateAssessmentResults(user.uid, selectedCourse.name, results);
       } catch (error) {
         console.error("Error updating assessment results:", error);
       }
@@ -278,19 +329,40 @@ const Assessments = () => {
     setAssessmentStarted(false);
     setAssessmentCompleted(false);
     setAssessmentResults(null);
-    setCustomTopics([]);
+    setSelectedTopics([]);
     setSelectedScope("entire");
-    fetchUserCourses();
+    setShowCourseModal(false);
+    setShowTopicSelectionModal(false);
+    loadUserCourses();
   };
 
   if (loading) {
     return (
-      <div className="h-full bg-[#0A0E14] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-500/20 border-t-emerald-500 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-gray-400 text-sm tracking-wider font-mono">
-            LOADING ASSESSMENTS...
-          </p>
+      <div className="h-full bg-[#0A0E14] overflow-x-hidden overflow-y-auto">
+        <div className="fixed inset-0 pointer-events-none overflow-hidden">
+          <div className="absolute top-0 right-0 w-150 h-150 bg-emerald-500/5 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-125 h-125 bg-cyan-500/5 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8 max-w-full">
+          <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4 sm:gap-6">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3">
+                <div className="w-1 h-8 sm:h-10 lg:h-12 bg-linear-to-b from-emerald-400 via-cyan-400 to-blue-400 rounded-full" />
+                <div className="flex-1 space-y-1.5 sm:space-y-2">
+                  <div className="h-2.5 sm:h-3 bg-gray-700/50 rounded w-24 sm:w-32 animate-pulse" />
+                  <div className="h-8 sm:h-10 bg-gray-700/50 rounded w-36 sm:w-48 animate-pulse" />
+                </div>
+              </div>
+              <div className="h-5 sm:h-6 bg-gray-700/50 rounded w-48 sm:w-64 ml-3 sm:ml-4 animate-pulse" />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+            <SkeletonStatCard />
+          </div>
         </div>
       </div>
     );
@@ -317,321 +389,328 @@ const Assessments = () => {
     );
   }
 
-  if (selectedCourse) {
-    return (
-      <div className="h-full bg-[#0A0E14] overflow-auto">
-        {/* Background decorative elements */}
-        <div className="fixed inset-0 pointer-events-none overflow-hidden">
-          <div className="absolute top-0 right-0 w-150 h-150 bg-emerald-500/5 rounded-full blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-125 h-125 bg-cyan-500/5 rounded-full blur-3xl" />
+  return (
+    <div className="h-full bg-[#0A0E14] overflow-x-hidden overflow-y-auto no-scrollbar pb-18 lg:pb-0">
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-0 right-0 w-150 h-150 bg-emerald-500/5 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-125 h-125 bg-cyan-500/5 rounded-full blur-3xl" />
+      </div>
+
+      <div className="relative z-10 p-3 sm:p-4 md:p-6 lg:p-8 space-y-4 sm:space-y-6 lg:space-y-8 max-w-full">
+        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-3 sm:gap-4 lg:gap-6 min-w-0">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2 sm:mb-3 min-w-0">
+              <div className="w-1 h-8 sm:h-10 lg:h-12 bg-linear-to-b from-emerald-400 via-cyan-400 to-blue-400 rounded-full shrink-0" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] sm:text-xs font-mono tracking-[0.2em] sm:tracking-[0.3em] text-emerald-400 uppercase mb-0.5 sm:mb-1">
+                  Skill Analysis
+                </p>
+                <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-white tracking-tight truncate">
+                  Assessments
+                </h1>
+              </div>
+            </div>
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-400 ml-3 sm:ml-4 line-clamp-2">
+              Identify and track your skill gaps through adaptive testing
+            </p>
+          </div>
         </div>
 
-        <div className="relative z-10 p-6 lg:p-8">
-          <button
-            onClick={handleBackToCourses}
-            className="text-gray-400 hover:text-emerald-400 mb-6 flex items-center gap-2 transition-all group font-medium"
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 lg:gap-6 w-full">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05, duration: 0.3 }}
+            className="bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 backdrop-blur-sm hover:border-blue-500/30 transition-all min-w-0"
           >
-            <span className="group-hover:-translate-x-1 transition-transform">
-              ←
-            </span>
-            Back to courses
-          </button>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-linear-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30 flex items-center justify-center">
+                <BookOpen className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-blue-400" />
+              </div>
+              <span className="text-[10px] sm:text-xs font-mono text-gray-400 uppercase tracking-wider">
+                Total
+              </span>
+            </div>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-0.5 sm:mb-1">
+              {courses.length}
+            </p>
+            <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500">
+              Active courses
+            </p>
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-4xl mx-auto bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-2xl p-8 backdrop-blur-sm"
+            transition={{ delay: 0.1, duration: 0.3 }}
+            className="bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 backdrop-blur-sm hover:border-yellow-500/30 transition-all min-w-0"
           >
-            <div className="flex items-start justify-between mb-8">
-              <div>
-                <h1 className="text-4xl font-bold text-white mb-2">
-                  {selectedCourse.name}
-                </h1>
-                <p className="text-gray-400 text-lg">
-                  Assess your current skill level
-                </p>
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-linear-to-br from-yellow-500/20 to-yellow-500/10 border border-yellow-500/30 flex items-center justify-center">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-yellow-400" />
               </div>
-              <div className="w-16 h-16 rounded-xl bg-linear-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center">
-                <Brain className="w-8 h-8 text-emerald-400" />
-              </div>
+              <span className="text-[10px] sm:text-xs font-mono text-gray-400 uppercase tracking-wider">
+                Pending
+              </span>
             </div>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-0.5 sm:mb-1">
+              {courses.filter((c) => c.status === "pending").length}
+            </p>
+            <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500">
+              Awaiting assessment
+            </p>
+          </motion.div>
 
-            {/* Assessment Info Cards */}
-            <div className="grid grid-cols-3 gap-4 mb-8">
-              <div className="bg-linear-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/30 rounded-xl p-5 hover:border-blue-500/50 transition-all">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-blue-500/20 flex items-center justify-center">
-                    <Clock className="w-5 h-5 text-blue-400" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-300">
-                    Duration
-                  </span>
-                </div>
-                <p className="text-3xl font-bold text-white">15-20 min</p>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
+            className="bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-6 backdrop-blur-sm hover:border-emerald-500/30 transition-all min-w-0"
+          >
+            <div className="flex items-center justify-between mb-3 sm:mb-4">
+              <div className="w-9 h-9 sm:w-10 sm:h-10 lg:w-12 lg:h-12 rounded-lg sm:rounded-xl bg-linear-to-br from-emerald-500/20 to-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 lg:w-6 lg:h-6 text-emerald-400" />
               </div>
-
-              <div className="bg-linear-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/30 rounded-xl p-5 hover:border-purple-500/50 transition-all">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-purple-500/20 flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-purple-400" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-300">
-                    Questions
-                  </span>
-                </div>
-                <p className="text-3xl font-bold text-white">15-25</p>
-              </div>
-
-              <div className="bg-linear-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-xl p-5 hover:border-emerald-500/50 transition-all">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-lg bg-emerald-500/20 flex items-center justify-center">
-                    <Zap className="w-5 h-5 text-emerald-400" />
-                  </div>
-                  <span className="text-sm font-medium text-gray-300">
-                    Adaptive
-                  </span>
-                </div>
-                <p className="text-2xl font-bold text-white">Yes</p>
-              </div>
+              <span className="text-[10px] sm:text-xs font-mono text-gray-400 uppercase tracking-wider">
+                Done
+              </span>
             </div>
-
-            {/* What to expect */}
-            <div className="bg-linear-to-br from-cyan-500/5 to-blue-500/5 border border-cyan-500/20 rounded-xl p-6 mb-8">
-              <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-2">
-                <CheckCircle className="w-6 h-6 text-emerald-400" />
-                What to expect
-              </h3>
-              <ul className="space-y-3">
-                <li className="flex items-start gap-3 group">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400 mt-2 group-hover:scale-150 transition-transform" />
-                  <span className="text-gray-300">
-                    Questions adapt to your skill level in real-time
-                  </span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <div className="w-2 h-2 rounded-full bg-cyan-400 mt-2 group-hover:scale-150 transition-transform" />
-                  <span className="text-gray-300">
-                    Immediate feedback on your performance
-                  </span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <div className="w-2 h-2 rounded-full bg-blue-400 mt-2 group-hover:scale-150 transition-transform" />
-                  <span className="text-gray-300">
-                    Personalized action plan based on results
-                  </span>
-                </li>
-                <li className="flex items-start gap-3 group">
-                  <div className="w-2 h-2 rounded-full bg-purple-400 mt-2 group-hover:scale-150 transition-transform" />
-                  <span className="text-gray-300">
-                    Progress saved automatically - you can pause anytime
-                  </span>
-                </li>
-              </ul>
-            </div>
-
-            {/* Tips */}
-            <div className="bg-linear-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-5 mb-8">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-6 h-6 text-yellow-400 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-yellow-200 font-semibold mb-1">
-                    Tips for best results
-                  </p>
-                  <p className="text-yellow-200/80 text-sm">
-                    Find a quiet place, avoid distractions, and answer honestly
-                    - this helps us identify your actual skill gaps accurately.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-4">
-              <button
-                onClick={() => setShowFileUploadModal(true)}
-                className="flex-1 bg-linear-to-br from-gray-700/50 to-gray-800/50 border border-gray-600/50 text-white py-4 rounded-xl font-semibold text-lg hover:border-gray-500/50 hover:bg-gray-700/60 transition-all duration-200 flex items-center justify-center gap-3 group"
-              >
-                <Upload className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                Upload Study Materials
-              </button>
-
-              <button
-                onClick={handleOpenTopicSelection}
-                className="flex-1 bg-linear-to-r from-emerald-500 to-cyan-500 text-white py-4 rounded-xl font-semibold text-lg hover:shadow-lg hover:shadow-emerald-500/30 hover:scale-[1.02] transition-all duration-200 flex items-center justify-center gap-3"
-              >
-                <Play className="w-6 h-6" />
-                Configure & Start Assessment
-              </button>
-            </div>
+            <p className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-0.5 sm:mb-1">
+              {courses.filter((c) => c.status === "completed").length}
+            </p>
+            <p className="text-[10px] sm:text-xs lg:text-sm text-gray-500">
+              Assessments completed
+            </p>
           </motion.div>
         </div>
 
-        {/* Topic Selection Modal */}
+        <div className="min-w-0 w-full">
+          <CourseSelector
+            courses={courses}
+            onSelectCourse={handleCourseSelect}
+          />
+        </div>
+
         <AnimatePresence>
-          {showTopicSelectionModal && (
+          {showCourseModal && selectedCourse && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col mb-14 lg:mb-0"
               >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-white">
-                    Configure Assessment
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-700/50 shrink-0">
+                  <h3 className="text-lg sm:text-xl font-bold text-white">
+                    {selectedCourse.name}
                   </h3>
                   <button
-                    onClick={() => setShowTopicSelectionModal(false)}
-                    className="text-gray-400 hover:text-white transition-colors"
+                    onClick={() => setShowCourseModal(false)}
+                    className="text-gray-400 hover:text-white transition-colors p-1"
+                    aria-label="Close modal"
                   >
-                    <X className="w-6 h-6" />
+                    <X className="w-5 h-5" />
                   </button>
                 </div>
 
-                {/* Scope Selection */}
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-3">
-                    Assessment Scope
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={() => setSelectedScope("entire")}
-                      className={`p-5 rounded-xl border-2 transition-all ${
-                        selectedScope === "entire"
-                          ? "border-emerald-500 bg-emerald-500/10"
-                          : "border-gray-700/60 bg-gray-800/50 hover:border-gray-600"
-                      }`}
-                    >
-                      <BookOpen
-                        className={`w-7 h-7 mb-3 mx-auto ${
-                          selectedScope === "entire"
-                            ? "text-emerald-400"
-                            : "text-gray-400"
-                        }`}
-                      />
-                      <p
-                        className={`font-semibold mb-1 ${
-                          selectedScope === "entire"
-                            ? "text-white"
-                            : "text-gray-300"
-                        }`}
-                      >
-                        Entire Subject
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 no-scrollbar">
+                  {selectedCourse.skillGapsCount > 0 && (
+                    <div className="mb-3 sm:mb-4 p-3 sm:p-4 bg-linear-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-1.5">
+                          <TrendingUp className="w-4 h-4 text-blue-400 shrink-0" />
+                          <span className="text-xs sm:text-sm font-semibold text-white">
+                            Skill Gap Resolution
+                          </span>
+                        </div>
+                        <span className="text-xs sm:text-sm font-bold text-blue-400">
+                          {Math.round(selectedCourse.skillGapProgress || 0)}%
+                        </span>
+                      </div>
+                      <div className="w-full h-2 bg-gray-700/50 rounded-full overflow-hidden mb-1.5">
+                        <div
+                          className="h-full bg-linear-to-r from-blue-500 to-purple-500 rounded-full transition-all duration-500"
+                          style={{
+                            width: `${selectedCourse.skillGapProgress || 0}%`,
+                          }}
+                        />
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-gray-400">
+                        {selectedCourse.skillGapsCount} total skill gaps •{" "}
+                        {Math.round(
+                          (selectedCourse.skillGapsCount *
+                            (selectedCourse.skillGapProgress || 0)) /
+                            100,
+                        )}{" "}
+                        fixed
                       </p>
-                      <p className="text-xs text-gray-400">
-                        Cover all topics in {selectedCourse.name}
-                      </p>
-                    </button>
 
-                    <button
-                      onClick={() => setSelectedScope("selected")}
-                      className={`p-5 rounded-xl border-2 transition-all ${
-                        selectedScope === "selected"
-                          ? "border-emerald-500 bg-emerald-500/10"
-                          : "border-gray-700/60 bg-gray-800/50 hover:border-gray-600"
-                      }`}
-                    >
-                      <Target
-                        className={`w-7 h-7 mb-3 mx-auto ${
-                          selectedScope === "selected"
-                            ? "text-emerald-400"
-                            : "text-gray-400"
-                        }`}
-                      />
-                      <p
-                        className={`font-semibold mb-1 ${
-                          selectedScope === "selected"
-                            ? "text-white"
-                            : "text-gray-300"
-                        }`}
-                      >
-                        Selected Topics
+                      {selectedCourse.canReassess && (
+                        <div className="mt-2 flex items-center gap-1.5 text-emerald-400 text-xs">
+                          <CheckCircle className="w-3.5 h-3.5 shrink-0" />
+                          <span className="font-semibold">
+                            All skill gaps fixed! Ready for reassessment
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between gap-3 mb-3 sm:mb-4">
+                    <div className="flex-1 flex items-center">
+                      <p className="text-gray-400 text-lg sm:text-sm">
+                        {selectedCourse.canReassess
+                          ? "Verify your mastery through reassessment"
+                          : "Assess your current skill level"}
                       </p>
-                      <p className="text-xs text-gray-400">
-                        Focus on specific topics only
-                      </p>
-                    </button>
+                    </div>
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg bg-linear-to-br from-emerald-500/20 to-cyan-500/20 border border-emerald-500/30 flex items-center justify-center shrink-0">
+                      {selectedCourse.canReassess ? (
+                        <RotateCcw className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
+                      ) : (
+                        <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-400" />
+                      )}
+                    </div>
                   </div>
-                </div>
 
-                {/* Topic Input */}
-                {selectedScope === "selected" && (
-                  <div className="mb-6">
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Add Topics
-                    </label>
-                    <div className="flex gap-2 mb-3">
-                      <input
-                        type="text"
-                        value={newTopic}
-                        onChange={(e) => setNewTopic(e.target.value)}
-                        placeholder="e.g., Binary Trees, Sorting Algorithms"
-                        className="flex-1 px-4 py-3 bg-gray-800/50 border border-gray-700/60 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
-                        onKeyPress={(e) => {
-                          if (e.key === "Enter") handleAddTopic();
-                        }}
-                      />
-                      <button
-                        onClick={handleAddTopic}
-                        className="px-5 py-3 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
-                      >
-                        <Plus className="w-5 h-5" />
-                      </button>
+                  <div className="grid grid-cols-3 gap-2 mb-3 sm:mb-4">
+                    <div className="bg-linear-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/30 rounded-lg p-2.5 sm:p-3 hover:border-blue-500/50 transition-all">
+                      <div className="flex flex-col gap-1 mb-1.5">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-blue-500/20 flex items-center justify-center mx-auto">
+                          <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-400" />
+                        </div>
+                        <span className="text-[10px] sm:text-xs font-medium text-gray-300 text-center">
+                          Duration
+                        </span>
+                      </div>
+                      <p className="text-base sm:text-lg font-bold text-white text-center">
+                        15-20
+                        <span className="text-[10px] sm:text-xs font-normal text-gray-400 ml-0.5">
+                          {" "}
+                          min
+                        </span>
+                      </p>
                     </div>
 
-                    {customTopics.length > 0 && (
-                      <div className="space-y-2">
-                        <p className="text-sm text-gray-400">
-                          Selected topics ({customTopics.length}):
-                        </p>
-                        <div className="flex flex-wrap gap-2">
-                          {customTopics.map((topic) => (
-                            <div
-                              key={topic}
-                              className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg group"
-                            >
-                              <span className="text-sm text-white">
-                                {topic}
-                              </span>
-                              <button
-                                onClick={() => handleRemoveTopic(topic)}
-                                className="text-gray-400 hover:text-red-400 transition-colors"
-                              >
-                                <X className="w-4 h-4" />
-                              </button>
-                            </div>
-                          ))}
+                    <div className="bg-linear-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/30 rounded-lg p-2.5 sm:p-3 hover:border-purple-500/50 transition-all">
+                      <div className="flex flex-col gap-1 mb-1.5">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-purple-500/20 flex items-center justify-center mx-auto">
+                          <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-purple-400" />
+                        </div>
+                        <span className="text-[10px] sm:text-xs font-medium text-gray-300 text-center">
+                          Questions
+                        </span>
+                      </div>
+                      <p className="text-base sm:text-lg font-bold text-white text-center">
+                        15-20
+                      </p>
+                    </div>
+
+                    <div className="bg-linear-to-br from-emerald-500/10 to-emerald-500/5 border border-emerald-500/30 rounded-lg p-2.5 sm:p-3 hover:border-emerald-500/50 transition-all">
+                      <div className="flex flex-col gap-1 mb-1.5">
+                        <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-md bg-emerald-500/20 flex items-center justify-center mx-auto">
+                          <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-emerald-400" />
+                        </div>
+                        <span className="text-[10px] sm:text-xs font-medium text-gray-300 text-center">
+                          Adaptive
+                        </span>
+                      </div>
+                      <p className="text-sm sm:text-base font-bold text-white text-center">
+                        Yes
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="bg-linear-to-br from-cyan-500/5 to-blue-500/5 border border-cyan-500/20 rounded-xl p-3 sm:p-4 mb-3 sm:mb-4">
+                    <h3 className="text-sm sm:text-base font-semibold text-white mb-2 sm:mb-3 flex items-center gap-1.5">
+                      <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
+                      What to expect
+                    </h3>
+                    <ul className="space-y-1.5">
+                      <li className="flex items-start gap-1.5 group">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-1.5 group-hover:scale-150 transition-transform shrink-0" />
+                        <span className="text-xs sm:text-sm text-gray-300">
+                          Questions adapt to your skill level in real-time
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-1.5 group">
+                        <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 mt-1.5 group-hover:scale-150 transition-transform shrink-0" />
+                        <span className="text-xs sm:text-sm text-gray-300">
+                          Immediate feedback on your performance
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-1.5 group">
+                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400 mt-1.5 group-hover:scale-150 transition-transform shrink-0" />
+                        <span className="text-xs sm:text-sm text-gray-300">
+                          {selectedCourse.canReassess
+                            ? "Verify mastery of previously weak areas"
+                            : "Personalized action plan based on results"}
+                        </span>
+                      </li>
+                      <li className="flex items-start gap-1.5 group">
+                        <div className="w-1.5 h-1.5 rounded-full bg-purple-400 mt-1.5 group-hover:scale-150 transition-transform shrink-0" />
+                        <span className="text-xs sm:text-sm text-gray-300">
+                          Progress saved automatically
+                        </span>
+                      </li>
+                    </ul>
+                  </div>
+
+                  {!selectedCourse.canReassess && (
+                    <div className="bg-linear-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/30 rounded-xl p-3 sm:p-4 mb-3">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="w-4 h-4 text-yellow-400 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="text-xs sm:text-sm text-yellow-200 font-semibold mb-0.5">
+                            Tips for best results
+                          </p>
+                          <p className="text-[10px] sm:text-xs text-yellow-200/80">
+                            Find a quiet place, avoid distractions, and answer
+                            honestly - this helps us identify your actual skill
+                            gaps accurately.
+                          </p>
                         </div>
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {selectedScope === "selected" &&
-                      customTopics.length === 0 && (
-                        <p className="text-sm text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 flex items-start gap-2">
-                          <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-                          Add at least one topic or select "Entire Subject"
-                        </p>
-                      )}
-                  </div>
-                )}
+                  {!selectedCourse.canReassess && (
+                    <button
+                      onClick={() => {
+                        setShowCourseModal(false);
+                        setShowFileUploadModal(true);
+                      }}
+                      className="w-full bg-linear-to-br from-gray-700/50 to-gray-800/50 border border-gray-600/50 text-white py-2.5 rounded-lg font-semibold text-xs sm:text-sm hover:border-gray-500/50 hover:bg-gray-700/60 transition-all duration-200 flex items-center justify-center gap-1.5 group"
+                    >
+                      <Upload className="w-4 h-4 group-hover:scale-110 transition-transform shrink-0" />
+                      <span>Upload Study Materials</span>
+                    </button>
+                  )}
+                </div>
 
-                {/* Action Buttons */}
-                <div className="flex gap-3">
+                <div className="flex gap-2.5 sm:gap-3 p-4 sm:p-5 border-t border-gray-700/50 shrink-0">
                   <button
-                    onClick={() => setShowTopicSelectionModal(false)}
-                    className="flex-1 px-4 py-3 bg-gray-800/50 text-white rounded-lg font-semibold hover:bg-gray-700/50 transition"
+                    onClick={() => setShowCourseModal(false)}
+                    className="flex-1 px-4 py-2.5 bg-gray-800/50 border border-gray-700/50 text-white rounded-lg font-semibold hover:bg-gray-700/50 transition text-sm"
                   >
                     Cancel
                   </button>
                   <button
-                    onClick={handleStartAssessment}
-                    disabled={
-                      selectedScope === "selected" && customTopics.length === 0
-                    }
-                    className="flex-1 px-4 py-3 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    onClick={handleOpenTopicSelection}
+                    className="flex-1 px-2 py-1 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition flex items-center justify-center gap-1.5 text-sm"
                   >
-                    Start Assessment
-                    <ChevronRight className="w-5 h-5" />
+                    {selectedCourse.canReassess ? (
+                      <>
+                        <RotateCcw className="w-4 h-4 shrink-0" />
+                        <span>Reassess</span>
+                      </>
+                    ) : (
+                      <>
+                        <Play className="w-4 h-4 shrink-0" />
+                        <span>Start Assessment</span>
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>
@@ -639,22 +718,243 @@ const Assessments = () => {
           )}
         </AnimatePresence>
 
-        {/* File Upload Modal */}
+        <AnimatePresence>
+          {showTopicSelectionModal && selectedCourse && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col"
+              >
+                <div className="flex items-center justify-between p-4 sm:p-5 border-b border-gray-700/50 shrink-0">
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white">
+                      Configure{" "}
+                      {selectedCourse.canReassess
+                        ? "Reassessment"
+                        : "Assessment"}
+                    </h3>
+                    <p className="text-[10px] sm:text-xs text-gray-400 mt-0.5">
+                      {selectedCourse.name}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setShowTopicSelectionModal(false);
+                      setShowCourseModal(true);
+                    }}
+                    className="text-gray-400 hover:text-white transition-colors p-1"
+                    aria-label="Close modal"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="flex-1 overflow-y-auto p-4 sm:p-5 no-scrollbar">
+                  <div className="mb-3 sm:mb-4">
+                    <label className="block text-[10px] sm:text-xs font-medium text-gray-300 mb-2">
+                      Assessment Scope
+                    </label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        onClick={() => setSelectedScope("entire")}
+                        className={`p-2.5 sm:p-3 rounded-lg border-2 transition-all ${
+                          selectedScope === "entire"
+                            ? "border-emerald-500 bg-emerald-500/10"
+                            : "border-gray-700/60 bg-gray-800/50 hover:border-gray-600"
+                        }`}
+                      >
+                        <BookOpen
+                          className={`w-5 h-5 sm:w-6 sm:h-6 mb-1.5 sm:mb-2 mx-auto ${
+                            selectedScope === "entire"
+                              ? "text-emerald-400"
+                              : "text-gray-400"
+                          }`}
+                        />
+                        <p
+                          className={`text-xs sm:text-sm font-semibold mb-0.5 ${
+                            selectedScope === "entire"
+                              ? "text-white"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          Entire Subject
+                        </p>
+                        <p className="text-[9px] sm:text-[10px] text-gray-400 line-clamp-2">
+                          Cover all topics in {selectedCourse.name}
+                        </p>
+                      </button>
+
+                      <button
+                        onClick={() => setSelectedScope("selected")}
+                        className={`p-2.5 sm:p-3 rounded-lg border-2 transition-all ${
+                          selectedScope === "selected"
+                            ? "border-emerald-500 bg-emerald-500/10"
+                            : "border-gray-700/60 bg-gray-800/50 hover:border-gray-600"
+                        }`}
+                      >
+                        <Target
+                          className={`w-5 h-5 sm:w-6 sm:h-6 mb-1.5 sm:mb-2 mx-auto ${
+                            selectedScope === "selected"
+                              ? "text-emerald-400"
+                              : "text-gray-400"
+                          }`}
+                        />
+                        <p
+                          className={`text-xs sm:text-sm font-semibold mb-0.5 ${
+                            selectedScope === "selected"
+                              ? "text-white"
+                              : "text-gray-300"
+                          }`}
+                        >
+                          Selected Topics
+                        </p>
+                        <p className="text-[9px] sm:text-[10px] text-gray-400">
+                          Focus on specific topics only
+                        </p>
+                      </button>
+                    </div>
+                  </div>
+
+                  {selectedScope === "selected" && (
+                    <div className="mb-3 sm:mb-4">
+                      <label className="block text-[10px] sm:text-xs font-medium text-gray-300 mb-1.5 sm:mb-2">
+                        Manage Topics
+                      </label>
+
+                      <div className="flex gap-1.5 sm:gap-2 mb-2 sm:mb-3">
+                        <input
+                          type="text"
+                          value={newTopic}
+                          onChange={(e) => setNewTopic(e.target.value)}
+                          placeholder="e.g., Binary Trees"
+                          className="flex-1 px-2.5 sm:px-3 py-1.5 sm:py-2 bg-gray-800/50 border border-gray-700/60 rounded-lg text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
+                          onKeyPress={(e) => {
+                            if (e.key === "Enter") handleAddTopic();
+                          }}
+                        />
+                        <button
+                          onClick={handleAddTopic}
+                          className="px-2.5 sm:px-3 py-1.5 sm:py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors shrink-0"
+                        >
+                          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
+
+                      {courseTopics.length > 0 ? (
+                        <div className="space-y-1.5 sm:space-y-2">
+                          <p className="text-[9px] sm:text-[10px] text-gray-400">
+                            Available topics ({courseTopics.length}):
+                          </p>
+                          <div className="space-y-1 sm:space-y-1.5 max-h-40 sm:max-h-48 overflow-y-auto no-scrollbar">
+                            {courseTopics.map((topic) => (
+                              <div
+                                key={topic}
+                                className={`flex items-center justify-between px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border-2 transition-all cursor-pointer ${
+                                  selectedTopics.includes(topic)
+                                    ? "border-emerald-500 bg-emerald-500/10"
+                                    : "border-gray-700/60 bg-gray-800/50 hover:border-gray-600"
+                                }`}
+                              >
+                                <div
+                                  onClick={() =>
+                                    handleToggleTopicSelection(topic)
+                                  }
+                                  className="flex items-center gap-1 sm:gap-1.5 flex-1 min-w-0"
+                                >
+                                  <div
+                                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 rounded border-2 flex items-center justify-center transition-all shrink-0 ${
+                                      selectedTopics.includes(topic)
+                                        ? "border-emerald-500 bg-emerald-500"
+                                        : "border-gray-600"
+                                    }`}
+                                  >
+                                    {selectedTopics.includes(topic) && (
+                                      <CheckCircle className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-white" />
+                                    )}
+                                  </div>
+                                  <span className="text-[10px] sm:text-xs text-white truncate">
+                                    {topic}
+                                  </span>
+                                </div>
+                                <button
+                                  onClick={() => handleRemoveTopic(topic)}
+                                  className="text-gray-400 hover:text-red-400 transition-colors ml-1.5 sm:ml-2 p-0.5 shrink-0"
+                                >
+                                  <X className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-[10px] sm:text-xs text-gray-400 bg-gray-800/50 border border-gray-700/60 rounded-lg p-2.5 sm:p-3 text-center">
+                          No topics added yet. Add topics above to get started.
+                        </p>
+                      )}
+
+                      {selectedScope === "selected" &&
+                        selectedTopics.length === 0 &&
+                        courseTopics.length > 0 && (
+                          <p className="text-[10px] sm:text-xs text-yellow-400 bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-2 sm:p-2.5 flex items-start gap-1 sm:gap-1.5 mt-2">
+                            <AlertCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 mt-0.5 shrink-0" />
+                            <span className="text-[9px] sm:text-[10px]">
+                              Select at least one topic or choose "Entire
+                              Subject"
+                            </span>
+                          </p>
+                        )}
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2.5 sm:gap-3 p-4 sm:p-5 border-t border-gray-700/50 shrink-0">
+                  <button
+                    onClick={() => {
+                      setShowTopicSelectionModal(false);
+                      setShowCourseModal(true);
+                    }}
+                    className="flex-1 px-2 py-1 bg-gray-800/50 border border-gray-700/50 text-white rounded-lg font-semibold hover:bg-gray-700/50 transition text-sm"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleStartAssessment}
+                    disabled={
+                      selectedScope === "selected" &&
+                      (courseTopics.length === 0 || selectedTopics.length === 0)
+                    }
+                    className="flex-1 px-3 py-3 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-1.5 text-sm"
+                  >
+                    {selectedCourse.canReassess
+                      ? "Start Reassessment"
+                      : "Start Assessment"}
+                    <ChevronRight className="w-4 h-4 shrink-0" />
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
         <AnimatePresence>
           {showFileUploadModal && (
             <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
               <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
+                initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl p-8 max-w-md w-full"
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: "easeOut" }}
+                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl p-5 sm:p-6 max-w-md w-full"
               >
-                <div className="bg-linear-to-br from-emerald-500/20 to-cyan-500/20 p-6 rounded-xl mb-6 border border-emerald-500/30">
-                  <Upload className="w-14 h-14 text-emerald-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white text-center mb-2">
+                <div className="bg-linear-to-br from-emerald-500/20 to-cyan-500/20 p-4 sm:p-5 rounded-xl mb-5 border border-emerald-500/30">
+                  <Upload className="w-11 h-11 sm:w-12 sm:h-12 text-emerald-400 mx-auto mb-3" />
+                  <h3 className="text-lg sm:text-xl font-semibold text-white text-center mb-2">
                     Coming Soon!
                   </h3>
-                  <p className="text-gray-400 text-center text-sm">
+                  <p className="text-xs sm:text-sm text-gray-400 text-center">
                     Upload your study materials (PDFs, notes, slides) and we'll
                     generate personalized quiz questions from them. This feature
                     will be available in the next update!
@@ -662,295 +962,14 @@ const Assessments = () => {
                 </div>
 
                 <button
-                  onClick={() => setShowFileUploadModal(false)}
-                  className="w-full px-4 py-3 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition"
+                  onClick={() => {
+                    setShowFileUploadModal(false);
+                    setShowCourseModal(true);
+                  }}
+                  className="w-full px-4 py-2.5 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-lg text-sm font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition"
                 >
                   Got it!
                 </button>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-      </div>
-    );
-  }
-
-  return (
-    <div className="h-full bg-[#0A0E14] overflow-auto">
-      {/* Background decorative elements */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-0 right-0 w-150 h-150 bg-emerald-500/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-125 h-125 bg-cyan-500/5 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 p-6 lg:p-8 space-y-8">
-        {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-1 h-12 bg-linear-to-b from-emerald-400 via-cyan-400 to-blue-400 rounded-full" />
-              <div>
-                <p className="text-xs font-mono tracking-[0.3em] text-emerald-400 uppercase mb-1">
-                  Skill Analysis
-                </p>
-                <h1 className="text-5xl font-bold text-white tracking-tight">
-                  Assessments
-                </h1>
-              </div>
-            </div>
-            <p className="text-gray-400 text-lg ml-4">
-              Identify your skill gaps through adaptive testing
-            </p>
-          </div>
-          <button
-            onClick={() => setShowAddCourseModal(true)}
-            className="px-6 py-3 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-xl font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition-all duration-200 flex items-center gap-2 group"
-          >
-            <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-            Add Course
-          </button>
-        </div>
-
-        {/* Stats Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-2xl p-6 backdrop-blur-sm hover:border-blue-500/30 transition-all"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-blue-500/20 to-blue-500/10 border border-blue-500/30 flex items-center justify-center">
-                <BookOpen className="w-6 h-6 text-blue-400" />
-              </div>
-              <span className="text-sm font-mono text-gray-400 uppercase tracking-wider">
-                Total
-              </span>
-            </div>
-            <p className="text-4xl font-bold text-white mb-1">
-              {courses.length}
-            </p>
-            <p className="text-sm text-gray-500">Active courses</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-2xl p-6 backdrop-blur-sm hover:border-yellow-500/30 transition-all"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-yellow-500/20 to-yellow-500/10 border border-yellow-500/30 flex items-center justify-center">
-                <Clock className="w-6 h-6 text-yellow-400" />
-              </div>
-              <span className="text-sm font-mono text-gray-400 uppercase tracking-wider">
-                Pending
-              </span>
-            </div>
-            <p className="text-4xl font-bold text-white mb-1">
-              {courses.filter((c) => c.status === "pending").length}
-            </p>
-            <p className="text-sm text-gray-500">Awaiting assessment</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-linear-to-br from-gray-900/50 to-gray-800/30 border border-gray-700/50 rounded-2xl p-6 backdrop-blur-sm hover:border-emerald-500/30 transition-all"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="w-12 h-12 rounded-xl bg-linear-to-br from-emerald-500/20 to-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
-                <CheckCircle className="w-6 h-6 text-emerald-400" />
-              </div>
-              <span className="text-sm font-mono text-gray-400 uppercase tracking-wider">
-                Done
-              </span>
-            </div>
-            <p className="text-4xl font-bold text-white mb-1">
-              {courses.filter((c) => c.status === "completed").length}
-            </p>
-            <p className="text-sm text-gray-500">Assessments completed</p>
-          </motion.div>
-        </div>
-
-        {/* Course List */}
-        <CourseSelector
-          courses={courses}
-          onSelectCourse={handleCourseSelect}
-          onEditCourse={openEditModal}
-          onDeleteCourse={openDeleteConfirm}
-        />
-
-        {/* Modals */}
-        {/* Add Course Modal */}
-        <AnimatePresence>
-          {showAddCourseModal && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl p-8 max-w-md w-full"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-white">
-                    Add New Course
-                  </h3>
-                  <button
-                    onClick={() => {
-                      setShowAddCourseModal(false);
-                      setNewCourseName("");
-                    }}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Course Name
-                  </label>
-                  <input
-                    type="text"
-                    value={newCourseName}
-                    onChange={(e) => setNewCourseName(e.target.value)}
-                    placeholder="e.g., Data Structures, Calculus I"
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/60 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
-                    autoFocus
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") handleAddCourse();
-                    }}
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowAddCourseModal(false);
-                      setNewCourseName("");
-                    }}
-                    className="flex-1 px-4 py-3 bg-gray-800/50 text-white rounded-lg font-semibold hover:bg-gray-700/50 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleAddCourse}
-                    disabled={!newCourseName.trim()}
-                    className="flex-1 px-4 py-3 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Add Course
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Edit Course Modal */}
-        <AnimatePresence>
-          {showEditCourseModal && courseToEdit && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl p-8 max-w-md w-full"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-2xl font-bold text-white">Edit Course</h3>
-                  <button
-                    onClick={() => {
-                      setShowEditCourseModal(false);
-                      setCourseToEdit(null);
-                      setEditedCourseName("");
-                    }}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    <X className="w-6 h-6" />
-                  </button>
-                </div>
-
-                <div className="mb-6">
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
-                    Course Name
-                  </label>
-                  <input
-                    type="text"
-                    value={editedCourseName}
-                    onChange={(e) => setEditedCourseName(e.target.value)}
-                    placeholder="Enter new course name"
-                    className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700/60 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 transition-colors"
-                    autoFocus
-                    onKeyPress={(e) => {
-                      if (e.key === "Enter") handleEditCourse();
-                    }}
-                  />
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowEditCourseModal(false);
-                      setCourseToEdit(null);
-                      setEditedCourseName("");
-                    }}
-                    className="flex-1 px-4 py-3 bg-gray-800/50 text-white rounded-lg font-semibold hover:bg-gray-700/50 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleEditCourse}
-                    disabled={!editedCourseName.trim()}
-                    className="flex-1 px-4 py-3 bg-linear-to-r from-emerald-500 to-cyan-500 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-emerald-500/30 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    Save Changes
-                  </button>
-                </div>
-              </motion.div>
-            </div>
-          )}
-        </AnimatePresence>
-
-        {/* Delete Confirmation Modal */}
-        <AnimatePresence>
-          {showDeleteConfirm && courseToDelete && (
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="bg-[#1a1a2e] border border-gray-700/50 rounded-2xl p-8 max-w-md w-full"
-              >
-                <div className="bg-linear-to-br from-red-500/20 to-orange-500/20 p-6 rounded-xl mb-6 border border-red-500/30">
-                  <AlertCircle className="w-14 h-14 text-red-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-white text-center mb-2">
-                    Delete Course?
-                  </h3>
-                  <p className="text-gray-400 text-center text-sm">
-                    Are you sure you want to delete "{courseToDelete.name}"?
-                    This action cannot be undone.
-                  </p>
-                </div>
-
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      setShowDeleteConfirm(false);
-                      setCourseToDelete(null);
-                    }}
-                    className="flex-1 px-4 py-3 bg-gray-800/50 text-white rounded-lg font-semibold hover:bg-gray-700/50 transition"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={handleDeleteCourse}
-                    className="flex-1 px-4 py-3 bg-linear-to-r from-red-500 to-red-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-red-500/30 transition"
-                  >
-                    Delete
-                  </button>
-                </div>
               </motion.div>
             </div>
           )}

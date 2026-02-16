@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import {
   UserPlus,
   ClipboardList,
@@ -9,9 +10,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   Sparkles,
+  Clock,
+  Link,
+  Check,
+  X,
 } from "lucide-react";
+import { useAuth } from "../../contexts/AuthContext";
 
 const HowItWorks = () => {
+  const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
 
   const steps = [
@@ -88,153 +95,237 @@ const HowItWorks = () => {
   ];
 
   return (
-    <div className="flex-1 py-12 px-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="text-center space-y-4 mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-sm mb-4">
+    <div className="flex-1 py-6 sm:py-12 px-4 sm:px-6">
+      <div className="max-w-7xl mx-auto overflow-x-hidden no-scrollbar">
+        <motion.div
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="text-center space-y-3 sm:space-y-4 mb-12 sm:mb-16"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-sm mb-4"
+          >
             <Sparkles className="w-4 h-4" />
             <span>The Kryva System</span>
-          </div>
-          <h1 className="text-5xl md:text-6xl font-bold text-white">
+          </motion.div>
+          <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white px-4">
             How It Works
           </h1>
-          <p className="text-xl text-gray-400 max-w-3xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-400 max-w-3xl mx-auto px-4">
             From assessment to action - discover how Kryva transforms academic
             uncertainty into confident, prioritized learning
           </p>
-        </div>
+        </motion.div>
 
-        {/* Workflow Steps */}
-        <div className="space-y-24 mb-20">
+        <div className="space-y-16 sm:space-y-24 mb-12 sm:mb-20">
           {steps.map((step, index) => {
             const Icon = step.icon;
             const isEven = index % 2 === 0;
 
             return (
-              <div
+              <motion.div
                 key={step.number}
-                className={`flex flex-col ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} gap-12 items-center`}
+                initial={{ opacity: 0, y: 50 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.6, delay: index * 0.1 }}
+                className={`flex flex-col ${isEven ? "lg:flex-row" : "lg:flex-row-reverse"} gap-8 lg:gap-12 items-center`}
               >
-                {/* Visual Side */}
-                <div className="flex-1 flex justify-center">
-                  <div className="relative">
+                <div className="flex-1 flex justify-center w-full">
+                  <motion.div
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    whileInView={{ scale: 1, opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.2 }}
+                    whileHover={{ scale: 1.05 }}
+                    className="relative"
+                  >
                     <div
                       className={`absolute inset-0 bg-linear-to-br ${step.color} opacity-20 blur-3xl rounded-full`}
                     />
-                    <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-12">
-                      <div
-                        className={`w-32 h-32 rounded-full bg-linear-to-br ${step.color} flex items-center justify-center`}
+                    <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-2xl sm:rounded-3xl p-8 sm:p-12">
+                      <motion.div
+                        initial={{ rotate: -180, opacity: 0 }}
+                        whileInView={{ rotate: 0, opacity: 1 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.8, delay: 0.4 }}
+                        className={`w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-linear-to-br ${step.color} flex items-center justify-center`}
                       >
-                        <Icon className="w-16 h-16 text-white" />
-                      </div>
+                        <Icon className="w-12 h-12 sm:w-16 sm:h-16 text-white" />
+                      </motion.div>
                     </div>
-                    <div className="absolute -top-4 -right-4 px-4 py-2 bg-black/80 backdrop-blur-sm border border-white/20 rounded-full">
-                      <span className="text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-white to-gray-400">
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      whileInView={{ scale: 1 }}
+                      viewport={{ once: true }}
+                      transition={{ type: "spring", delay: 0.6 }}
+                      className="absolute -top-3 sm:-top-4 -right-3 sm:-right-4 px-3 sm:px-4 py-1 sm:py-2 bg-black/80 backdrop-blur-sm border border-white/20 rounded-full"
+                    >
+                      <span className="text-xl sm:text-2xl font-bold text-transparent bg-clip-text bg-linear-to-r from-white to-gray-400">
                         {step.number}
                       </span>
-                    </div>
-                  </div>
+                    </motion.div>
+                  </motion.div>
                 </div>
 
-                {/* Content Side */}
-                <div className="flex-1 space-y-6">
+                <motion.div
+                  initial={{ opacity: 0, x: isEven ? 50 : -50 }}
+                  whileInView={{ opacity: 1, x: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, delay: 0.3 }}
+                  className="flex-1 space-y-4 sm:space-y-6 w-full px-4 sm:px-0"
+                >
                   <div>
-                    <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+                    <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
                       {step.title}
                     </h2>
-                    <p className="text-lg text-gray-400">{step.description}</p>
+                    <p className="text-base sm:text-lg text-gray-400">
+                      {step.description}
+                    </p>
                   </div>
 
                   <div className="space-y-3">
                     {step.details.map((detail, idx) => (
-                      <div key={idx} className="flex items-start gap-3">
-                        <CheckCircle2
-                          className={`w-5 h-5 mt-0.5 shrink-0 bg-linear-to-br ${step.color} bg-clip-text text-transparent`}
-                          style={{
-                            WebkitTextFillColor: "transparent",
-                            WebkitBackgroundClip: "text",
-                          }}
-                        />
-                        <span className="text-gray-300">{detail}</span>
-                      </div>
+                      <motion.div
+                        key={idx}
+                        initial={{ opacity: 0, x: -20 }}
+                        whileInView={{ opacity: 1, x: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.4, delay: 0.4 + idx * 0.1 }}
+                        whileHover={{ x: 4 }}
+                        className="flex items-start gap-3 p-3 rounded-lg bg-white/5 border border-white/10 hover:border-white/20 hover:bg-white/10 transition-all duration-300 group"
+                      >
+                        <div
+                          className={`w-5 h-5 mt-0.5 shrink-0 rounded-full bg-linear-to-br ${step.color} flex items-center justify-center`}
+                        >
+                          <CheckCircle2 className="w-3 h-3 text-white" />
+                        </div>
+                        <span className="text-sm sm:text-base text-gray-300 group-hover:text-white transition-colors">
+                          {detail}
+                        </span>
+                      </motion.div>
                     ))}
                   </div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             );
           })}
         </div>
 
-        {/* Key Differentiator Section */}
-        <div className="bg-linear-to-br from-purple-500/10 via-transparent to-blue-500/10 border border-white/10 rounded-3xl p-8 md:p-12 mb-20">
-          <div className="text-center space-y-6">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-linear-to-br from-purple-500 to-blue-500 mb-4">
-              <AlertTriangle className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-3xl md:text-4xl font-bold text-white">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.6 }}
+          className="bg-linear-to-br from-purple-500/10 via-transparent to-blue-500/10 border border-white/10 rounded-2xl sm:rounded-3xl p-6 sm:p-8 md:p-12 mb-12 sm:mb-20"
+        >
+          <div className="text-center space-y-4 sm:space-y-6">
+            <motion.div
+              initial={{ scale: 0, rotate: -180 }}
+              whileInView={{ scale: 1, rotate: 0 }}
+              viewport={{ once: true }}
+              transition={{ type: "spring", duration: 0.8 }}
+              className="inline-flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-linear-to-br from-purple-500 to-blue-500 mb-4"
+            >
+              <AlertTriangle className="w-7 h-7 sm:w-8 sm:h-8 text-white" />
+            </motion.div>
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white px-4">
               The Kryva Difference: Consequence-Aware Intelligence
             </h2>
-            <p className="text-lg text-gray-300 max-w-3xl mx-auto">
+            <p className="text-base sm:text-lg text-gray-300 max-w-3xl mx-auto px-4">
               Traditional learning platforms tell you what you don't know. Kryva
               tells you which gaps will hurt you most and need immediate
               attention. We prioritize based on:
             </p>
 
-            <div className="grid md:grid-cols-3 gap-6 mt-8">
-              <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-                <div className="text-4xl mb-3">⏰</div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Timeline Urgency
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  How soon will this gap impact your courses and grades?
-                </p>
-              </div>
+            <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 mt-6 sm:mt-8">
+              {[
+                {
+                  icon: Clock,
+                  title: "Timeline Urgency",
+                  desc: "How soon will this gap impact your courses and grades?",
+                },
+                {
+                  icon: Link,
+                  title: "Dependency Chain",
+                  desc: "What other skills and courses depend on this foundation?",
+                },
+                {
+                  icon: AlertTriangle,
+                  title: "Failure Risk",
+                  desc: "Can this gap be recovered later, or is it irreversible?",
+                },
+              ].map((item, index) => {
+                const Icon = item.icon;
 
-              <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-                <div className="text-4xl mb-3">🔗</div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Dependency Chain
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  What other skills and courses depend on this foundation?
-                </p>
-              </div>
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, delay: 0.2 + index * 0.1 }}
+                    whileHover={{ scale: 1.05, y: -5 }}
+                    className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-xl p-4 sm:p-6"
+                  >
+                    <div className="mb-3 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-full bg-linear-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                        <Icon className="w-6 h-6 text-white" />
+                      </div>
+                    </div>
 
-              <div className="bg-black/30 backdrop-blur-sm border border-white/10 rounded-xl p-6">
-                <div className="text-4xl mb-3">💥</div>
-                <h3 className="text-xl font-semibold text-white mb-2">
-                  Failure Risk
-                </h3>
-                <p className="text-gray-400 text-sm">
-                  Can this gap be recovered later, or is it irreversible?
-                </p>
-              </div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-white mb-2">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-gray-400 text-xs sm:text-sm">
+                      {item.desc}
+                    </p>
+                  </motion.div>
+                );
+              })}
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Example Scenario */}
-        <div className="mb-20">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+        <div className="mb-12 sm:mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-8 sm:mb-12 px-4"
+          >
+            <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white mb-3 sm:mb-4">
               Real-World Example
             </h2>
-            <p className="text-lg text-gray-400">
+            <p className="text-base sm:text-lg text-gray-400">
               See how Kryva helps a first-semester computer science student
             </p>
-          </div>
+          </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-8">
-            <div className="bg-red-500/5 border border-red-500/20 rounded-2xl p-8">
+          <div className="grid md:grid-cols-2 gap-6 sm:gap-8">
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              whileHover={{ scale: 1.02 }}
+              className="bg-red-500/5 border border-red-500/20 rounded-xl sm:rounded-2xl p-6 sm:p-8"
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-red-500/20 flex items-center justify-center">
-                  <span className="text-red-400 text-xl">❌</span>
+                  <X className="w-5 h-5 text-red-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white">Without Kryva</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-white">
+                  Without Kryva
+                </h3>
               </div>
-              <div className="space-y-3 text-gray-400">
+              <div className="space-y-3 text-sm sm:text-base text-gray-400">
                 <p>
                   Sarah struggles with both calculus and programming
                   fundamentals.
@@ -253,16 +344,25 @@ const HowItWorks = () => {
                   considering dropping CS major.
                 </p>
               </div>
-            </div>
+            </motion.div>
 
-            <div className="bg-green-500/5 border border-green-500/20 rounded-2xl p-8">
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6 }}
+              whileHover={{ scale: 1.02 }}
+              className="bg-green-500/5 border border-green-500/20 rounded-xl sm:rounded-2xl p-6 sm:p-8"
+            >
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
-                  <span className="text-green-400 text-xl">✓</span>
+                  <Check className="w-5 h-5 text-green-400" />
                 </div>
-                <h3 className="text-xl font-bold text-white">With Kryva</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-white">
+                  With Kryva
+                </h3>
               </div>
-              <div className="space-y-3 text-gray-400">
+              <div className="space-y-3 text-sm sm:text-base text-gray-400">
                 <p>
                   Sarah uses Kryva, which identifies both gaps but flags
                   programming as CRITICAL.
@@ -281,27 +381,36 @@ const HowItWorks = () => {
                   confident in CS path.
                 </p>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
 
-        {/* CTA Section */}
-        <div className="text-center space-y-8 bg-linear-to-br from-blue-600/10 to-purple-600/10 border border-white/10 rounded-3xl p-12">
-          <h2 className="text-3xl md:text-4xl font-bold text-white">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.6 }}
+          className="text-center space-y-6 sm:space-y-8 bg-linear-to-br from-blue-600/10 to-purple-600/10 border border-white/10 rounded-2xl sm:rounded-3xl p-8 sm:p-12"
+        >
+          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-white px-4">
             Ready to Make Smarter Academic Decisions?
           </h2>
-          <p className="text-xl text-gray-400 max-w-2xl mx-auto">
+          <p className="text-base sm:text-xl text-gray-400 max-w-2xl mx-auto px-4">
             Join students who are taking control of their learning journey with
             consequence-aware prioritization.
           </p>
-          <button
-            onClick={() => navigate("/signup")}
-            className="group px-8 py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-2 mx-auto"
+          <motion.button
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onClick={() =>
+              navigate(isAuthenticated ? "/assessments" : "/signup")
+            }
+            className="group px-6 sm:px-8 py-3 sm:py-4 bg-linear-to-r from-blue-600 to-purple-600 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all duration-300 flex items-center justify-center gap-2 mx-auto text-sm sm:text-base"
           >
             Start Your Free Assessment
-            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-          </button>
-        </div>
+            <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" />
+          </motion.button>
+        </motion.div>
       </div>
     </div>
   );

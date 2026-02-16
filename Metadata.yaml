@@ -4,16 +4,6 @@ project:
   description: "An innovative educational application that helps students identify and prioritize critical skill gaps based on their potential academic consequences"
   version: "0.1.0"
   
-team:
-  name: "Team Pixel"
-  members:
-    - name: "Mohd Aqdas Asim"
-    - name: "Mohd Suleman"
-  
-presentation:
-  event: "AMUHACKS 5.0"
-  date: "2026"
-  
 repository:
   url: "https://github.com/MohdAqdasAsim/Kryva"
   default_branch: "main"

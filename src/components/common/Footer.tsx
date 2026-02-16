@@ -81,22 +81,28 @@ const Footer = () => {
         whileInView="visible"
         viewport={{ once: true }}
         variants={containerVariants}
-        className="px-8 py-16"
+        className="px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16 max-w-7xl mx-auto"
       >
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-12 mb-12">
-          {/* Brand section */}
-          <motion.div variants={itemVariants} className="md:col-span-4">
-            <Link to="/" className="flex items-center gap-3 mb-4 group">
-              <img src="/logo.svg" alt="Kryva logo" className="h-10 w-10" />
-              <span className="font-plus-jakarta font-bold text-2xl text-[--color-text-primary] group-hover:text-[--color-accent-primary] transition-colors duration-200">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 sm:gap-10 lg:gap-12 mb-8 sm:mb-10 lg:mb-12">
+          <motion.div variants={itemVariants} className="lg:col-span-4">
+            <Link
+              to="/"
+              className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4 group"
+            >
+              <img
+                src="/logo.svg"
+                alt="Kryva logo"
+                className="h-8 w-8 sm:h-10 sm:w-10"
+              />
+              <span className="font-plus-jakarta font-bold text-xl sm:text-2xl text-[--color-text-primary] group-hover:text-[--color-accent-primary] transition-colors duration-200">
                 Kryva
               </span>
             </Link>
-            <p className="text-sm text-[--color-text-secondary] leading-relaxed mb-6 max-w-xs">
+            <p className="text-xs sm:text-sm text-[--color-text-secondary] leading-relaxed mb-4 sm:mb-6 max-w-xs">
               Empowering first-semester students with consequence-aware skill
               gap analysis for academic success.
             </p>
-            <div className="flex items-center gap-1 text-xs text-[--color-text-tertiary]">
+            <div className="flex items-center gap-1 text-xs text-[--color-text-tertiary] flex-wrap">
               <span>Built by</span>
               <span className="font-semibold text-[--color-accent-primary]">
                 Team Pixel
@@ -105,22 +111,20 @@ const Footer = () => {
             </div>
           </motion.div>
 
-          {/* Links sections */}
-          {footerSections.map((section) => (
+          <div className="flex flex-row gap-8 sm:gap-10 lg:contents">
             <motion.div
-              key={section.title}
               variants={itemVariants}
-              className="md:col-span-2 md:col-start-auto"
+              className="flex-1 lg:col-span-2"
             >
-              <h3 className="font-inter font-semibold mb-4 text-[--color-text-primary]">
-                {section.title}
+              <h3 className="font-inter font-semibold mb-3 sm:mb-4 text-sm sm:text-base text-[--color-text-primary]">
+                {footerSections[0].title}
               </h3>
-              <ul className="flex flex-col gap-3">
-                {section.links.map((link) => (
+              <ul className="flex flex-col gap-2 sm:gap-3">
+                {footerSections[0].links.map((link) => (
                   <li key={link.name}>
                     <Link
                       to={link.to}
-                      className="text-sm text-[--color-text-secondary] hover:text-[--color-accent-primary] transition-colors duration-200 inline-block hover:translate-x-1 transform"
+                      className="text-xs sm:text-sm text-[--color-text-secondary] opacity-70 hover:opacity-100 hover:text-[--color-accent-primary] transition-all duration-200 inline-block hover:translate-x-1 transform"
                     >
                       {link.name}
                     </Link>
@@ -128,50 +132,95 @@ const Footer = () => {
                 ))}
               </ul>
             </motion.div>
-          ))}
 
-          {/* Social section */}
-          <motion.div variants={itemVariants} className="md:col-span-2">
-            <h3 className="font-inter font-semibold mb-4 text-[--color-text-primary]">
-              Connect
-            </h3>
-            <div className="flex flex-col gap-3">
-              {socialLinks.map((social) => (
-                <motion.a
-                  key={social.name}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ x: 4 }}
-                  className="flex items-center gap-2 text-sm text-[--color-text-secondary] hover:text-[--color-accent-primary] transition-colors duration-200"
-                >
-                  <social.icon size={16} />
-                  <span>{social.name}</span>
-                </motion.a>
-              ))}
-            </div>
-          </motion.div>
+            <motion.div
+              variants={itemVariants}
+              className="flex-1 lg:col-span-2"
+            >
+              <h3 className="font-inter font-semibold mb-3 sm:mb-4 text-sm sm:text-base text-[--color-text-primary]">
+                {footerSections[1].title}
+              </h3>
+              <ul className="flex flex-col gap-2 sm:gap-3">
+                {footerSections[1].links.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      to={link.to}
+                      className="text-xs sm:text-sm text-[--color-text-secondary] opacity-70 hover:opacity-100 hover:text-[--color-accent-primary] transition-all duration-200 inline-block hover:translate-x-1 transform"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
+
+          <div className="flex flex-row gap-8 sm:gap-10 lg:contents">
+            <motion.div
+              variants={itemVariants}
+              className="flex-1 lg:col-span-2"
+            >
+              <h3 className="font-inter font-semibold mb-3 sm:mb-4 text-sm sm:text-base text-[--color-text-primary]">
+                {footerSections[2].title}
+              </h3>
+              <ul className="flex flex-col gap-2 sm:gap-3">
+                {footerSections[2].links.map((link) => (
+                  <li key={link.name}>
+                    <Link
+                      to={link.to}
+                      className="text-xs sm:text-sm text-[--color-text-secondary] opacity-70 hover:opacity-100 hover:text-[--color-accent-primary] transition-all duration-200 inline-block hover:translate-x-1 transform"
+                    >
+                      {link.name}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+
+            <motion.div
+              variants={itemVariants}
+              className="flex-1 lg:col-span-2"
+            >
+              <h3 className="font-inter font-semibold mb-3 sm:mb-4 text-sm sm:text-base text-[--color-text-primary]">
+                Connect
+              </h3>
+              <div className="flex flex-col gap-2 sm:gap-3">
+                {socialLinks.map((social) => (
+                  <motion.a
+                    key={social.name}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ x: 4 }}
+                    className="flex items-center gap-2 text-xs sm:text-sm text-[--color-text-secondary] opacity-70 hover:opacity-100 hover:text-[--color-accent-primary] transition-all duration-200"
+                  >
+                    <social.icon size={16} className="shrink-0" />
+                    <span>{social.name}</span>
+                  </motion.a>
+                ))}
+              </div>
+            </motion.div>
+          </div>
         </div>
 
-        {/* Bottom bar */}
         <motion.div
           variants={itemVariants}
-          className="pt-4 border-t border-white/20 flex flex-col md:flex-row justify-between items-center gap-4"
+          className="pt-4 sm:pt-6 border-t border-white/20 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-4"
         >
-          <p className="text-sm text-white/70">
+          <p className="text-xs sm:text-sm text-white/70 text-center sm:text-left">
             © {new Date().getFullYear()} Kryva. All rights reserved.
           </p>
 
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 sm:gap-6 flex-wrap justify-center">
             <Link
-              to="/privacy"
-              className="text-xs text-white/70 hover:text-[#588FE7] font-inter font-semibold transition-colors duration-200"
+              to="/privacy-policy"
+              className="text-xs text-white/70 hover:text-[#588FE7] font-inter font-semibold transition-colors duration-200 whitespace-nowrap"
             >
               Privacy Policy
             </Link>
             <Link
-              to="/terms"
-              className="text-xs text-white/70 hover:text-[#588FE7] font-inter font-semibold transition-colors duration-200"
+              to="/terms-of-service"
+              className="text-xs text-white/70 hover:text-[#588FE7] font-inter font-semibold transition-colors duration-200 whitespace-nowrap"
             >
               Terms of Service
             </Link>

@@ -1,7 +1,16 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Mail, Lock, Eye, EyeOff, Chrome, ArrowLeft } from "lucide-react";
+import {
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Chrome,
+  ArrowLeft,
+  AlertCircle,
+} from "lucide-react";
 import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
@@ -22,6 +31,39 @@ const Signin = () => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
+  const getErrorMessage = (error: unknown): string => {
+    if (!(error instanceof Error)) {
+      return "Something went wrong. Please try again.";
+    }
+
+    const errorCode = (error as any).code;
+
+    switch (errorCode) {
+      case "auth/invalid-email":
+        return "Please enter a valid email address.";
+      case "auth/user-disabled":
+        return "This account has been disabled. Please contact support.";
+      case "auth/user-not-found":
+        return "No account found with this email. Please sign up first.";
+      case "auth/wrong-password":
+        return "Incorrect password. Please try again.";
+      case "auth/invalid-credential":
+        return "Invalid email or password. Please check your credentials.";
+      case "auth/too-many-requests":
+        return "Too many failed attempts. Please try again later.";
+      case "auth/network-request-failed":
+        return "Network error. Please check your connection and try again.";
+      case "auth/popup-closed-by-user":
+        return "Sign-in cancelled. Please try again.";
+      case "auth/cancelled-popup-request":
+        return "Sign-in cancelled. Please try again.";
+      case "auth/missing-email":
+        return "Please enter your email address.";
+      default:
+        return "An error occurred. Please try again.";
+    }
+  };
+
   const handleSignin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -38,11 +80,7 @@ const Signin = () => {
 
       navigate("/dashboard");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Something went wrong.");
-      }
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -56,11 +94,7 @@ const Signin = () => {
       await signInWithPopup(auth, provider);
       navigate("/dashboard");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
-      } else {
-        setError("Something went wrong.");
-      }
+      setError(getErrorMessage(error));
     } finally {
       setLoading(false);
     }
@@ -76,10 +110,14 @@ const Signin = () => {
       await sendPasswordResetEmail(auth, email);
       setMessage("Password reset email sent. Check your inbox.");
     } catch (error: unknown) {
-      if (error instanceof Error) {
-        setError(error.message);
+      const errorCode = (error as any)?.code;
+
+      if (errorCode === "auth/user-not-found") {
+        setError("No account found with this email address.");
+      } else if (errorCode === "auth/invalid-email") {
+        setError("Please enter a valid email address.");
       } else {
-        setError("Something went wrong.");
+        setError(getErrorMessage(error));
       }
     } finally {
       setLoading(false);
@@ -110,7 +148,7 @@ const Signin = () => {
               <button
                 onClick={handleGoogleSignin}
                 disabled={loading}
-                className="w-full flex items-center justify-center gap-3 px-4 py-3 mb-6 bg-[#2B303B] border border-gray-700/60 rounded-lg text-white font-medium hover:bg-[#333846] transition"
+                className="w-full flex items-center justify-center gap-3 px-4 py-3 mb-6 bg-[#2B303B] border border-gray-700/60 rounded-lg text-white font-medium hover:bg-[#333846] transition disabled:opacity-50"
               >
                 <Chrome size={20} />
                 Continue with Google
@@ -170,7 +208,7 @@ const Signin = () => {
                   <button
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-400"
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -179,21 +217,31 @@ const Signin = () => {
             )}
 
             {error && (
-              <div className="bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-lg">
-                {error}
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 text-red-400 text-sm p-3 rounded-lg"
+              >
+                <AlertCircle size={18} className="shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </motion.div>
             )}
 
             {message && (
-              <div className="bg-green-500/10 border border-green-500/30 text-green-400 text-sm p-3 rounded-lg">
-                {message}
-              </div>
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex items-start gap-2 bg-green-500/10 border border-green-500/30 text-green-400 text-sm p-3 rounded-lg"
+              >
+                <Mail size={18} className="shrink-0 mt-0.5" />
+                <span>{message}</span>
+              </motion.div>
             )}
 
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-[#028CC0] text-white rounded-lg font-semibold hover:bg-[#0279A6] transition disabled:opacity-50"
+              className="w-full py-3 bg-[#028CC0] text-white rounded-lg font-semibold hover:bg-[#0279A6] transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading
                 ? "Please wait..."
@@ -207,16 +255,16 @@ const Signin = () => {
             <div className="mt-6 text-center text-sm text-gray-400">
               <button
                 onClick={() => setMode("forgot")}
-                className="text-[#028CC0] hover:text-[#0279A6]"
+                className="text-[#028CC0] hover:text-[#0279A6] transition"
               >
                 Forgot password?
               </button>
 
               <p className="mt-4">
-                Don’t have an account?{" "}
+                Don't have an account?{" "}
                 <Link
                   to="/signup"
-                  className="text-[#028CC0] hover:text-[#0279A6]"
+                  className="text-[#028CC0] hover:text-[#0279A6] transition"
                 >
                   Sign up
                 </Link>
@@ -226,7 +274,7 @@ const Signin = () => {
             <div className="mt-6 text-center">
               <button
                 onClick={() => setMode("signin")}
-                className="flex items-center justify-center gap-2 text-[#028CC0] hover:text-[#0279A6] text-sm"
+                className="inline-flex items-center gap-2 text-[#028CC0] hover:text-[#0279A6] text-sm transition"
               >
                 <ArrowLeft size={16} />
                 Back to sign in
